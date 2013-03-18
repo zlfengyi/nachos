@@ -44,6 +44,8 @@ void CheckEndian()
 #endif
 }
 
+
+
 //----------------------------------------------------------------------
 // Machine::Machine
 // 	Initialize the simulation of user program execution.
@@ -62,7 +64,8 @@ Machine::Machine(bool debug)
     for (i = 0; i < MemorySize; i++)
       	mainMemory[i] = 0;
 #ifdef USE_TLB
-    tlb = new TranslationEntry[TLBSize];
+	clockPos = 0;
+	tlb = new TranslationEntry[TLBSize];
     for (i = 0; i < TLBSize; i++)
 	tlb[i].valid = FALSE;
     pageTable = NULL;
@@ -212,3 +215,51 @@ void Machine::WriteRegister(int num, int value)
 	registers[num] = value;
     }
 
+bool Machine::tlbMiss_FIFO2(int vpn) {
+	for (int i = 0; i < TLBSize; i++) {
+		if (tlb[clockPos].valid == false) {
+			memcpy(&tlb[clockPos], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 
+			tlb[clockPos].use = true;
+			return true;
+		}
+		clockPos = (clockPos+1)%TLBSize;
+	}
+
+	for (int i = 0; i < TLBSize; i++) {		
+		if (tlb[clockPos].use == false) {
+			memcpy(&tlb[clockPos], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 
+			tlb[clockPos].use = true;
+			return true;
+		} else {
+			tlb[clockPos].use = false;
+		}
+		clockPos = (clockPos+1)%TLBSize;
+	}
+	memcpy(&tlb[clockPos], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 
+	tlb[clockPos].use = true;
+	return true;
+}
+
+bool Machine::tlbMiss_LRU(int vpn) {
+	for (int i = 0; i < TLBSize; i++) {
+		if (tlb[i].valid == false) {	
+			memcpy(&tlb[i], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 
+			tlb[i].use = true;
+			tlb[i].lastUseTick = stats->totalTicks;
+			return true;
+		}
+	}
+
+	float mx = 1e30;
+	int k = -1;
+	for (int i = 0; i < TLBSize; i++) {
+		if (tlb[i].lastUseTick < mx) {
+			mx = tlb[i].lastUseTick;
+			k = i;
+		}
+	}
+	memcpy(&tlb[k], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 
+	tlb[k].use = true;
+	tlb[k].lastUseTick = stats->totalTicks;
+	return true;
+}

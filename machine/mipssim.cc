@@ -37,8 +37,8 @@ Machine::Run()
 	       currentThread->getName(), stats->totalTicks);
     interrupt->setStatus(UserMode);
     for (;;) {
-        OneInstruction(instr);
-	interrupt->OneTick();
+		OneInstruction(instr);
+		interrupt->OneTick();
 	if (singleStep && (runUntilTime <= stats->totalTicks))
 	  Debugger();
     }
@@ -533,7 +533,7 @@ Machine::OneInstruction(Instruction *instr)
     	
       case OP_SYSCALL:
 	RaiseException(SyscallException, 0);
-	return; 
+	break; 
 	
       case OP_XOR:
 	registers[instr->rd] = registers[instr->rs] ^ registers[instr->rt];

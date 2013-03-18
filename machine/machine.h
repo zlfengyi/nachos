@@ -25,6 +25,7 @@
 #include "utility.h"
 #include "translate.h"
 #include "disk.h"
+#include "addrspace.h"
 
 // Definitions related to the size, and format of user memory
 
@@ -35,6 +36,7 @@
 #define NumPhysPages    32
 #define MemorySize 	(NumPhysPages * PageSize)
 #define TLBSize		4		// if there is a TLB, make it small
+#define NumVirPages 64
 
 enum ExceptionType { NoException,           // Everything ok!
 		     SyscallException,      // A program executed a system call.
@@ -70,6 +72,19 @@ enum ExceptionType { NoException,           // Everything ok!
 #define BadVAddrReg	39	// The failing virtual address on an exception
 
 #define NumTotalRegs 	40
+
+
+class PhysMemoryManager{
+public:
+	bool useArr[NumPhysPages];
+	AddrSpace* spaceArr[NumPhysPages];
+	int vpnArr[NumPhysPages];
+	PhysMemoryManager() {
+		int i;
+		for (i = 0; i < NumPhysPages; i++) useArr[i] = false;
+	}
+};
+
 
 // The following class defines an instruction, represented in both
 // 	undecoded binary form
@@ -182,11 +197,18 @@ class Machine {
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
 
+	bool tlbMiss_FIFO2(int vpn); //add in lab5 for tlbmiss
+	bool tlbMiss_LRU(int vpn);   //add in lab5 for tlbmiss
+
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction
     int runUntilTime;		// drop back into the debugger when simulated
 				// time reaches this value
+
+	//add in lab5
+	int clockPos; // the clock posiont for FIFO(second chance)
+	
 };
 
 extern void ExceptionHandler(ExceptionType which);

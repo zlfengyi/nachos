@@ -48,16 +48,22 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
 
     if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(FALSE);
+		DEBUG('a', "Shutdown, initiated by user program.\n");
+   		interrupt->Halt();
+    } else if (which == PageFaultException) {
+		int virAddr = machine->ReadRegister(BadVAddrReg);
+		int vpn = virAddr/PageSize;
+		machine->tlbMiss_LRU(vpn); 
+		stats->numPageFaults++;
+	} else {
+		printf("Unexpected user mode exception %d %d\n", which, type);
+		ASSERT(FALSE);
     }
 }

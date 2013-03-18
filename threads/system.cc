@@ -35,6 +35,8 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+BitMap *memoryBitMap;  //
+PhysMemoryManager *physMemoryManager = new PhysMemoryManager;
 #endif
 
 #ifdef NETWORK
@@ -90,6 +92,7 @@ Initialize(int argc, char **argv)
     bool randomYield = FALSE;
 	
 #ifdef USER_PROGRAM
+	memoryBitMap = new BitMap(MemorySize);
     bool debugUserProg = FALSE;	// single step user program
 #endif
 #ifdef FILESYS_NEEDED
@@ -141,7 +144,8 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
+//    if (randomYield)				// start the timer (if needed)
+//open the timer to make user-prog auto switch
 	timer = new Timer(TimerInterruptHandler, 0, randomYield);
 
     threadToBeDestroyed = NULL;

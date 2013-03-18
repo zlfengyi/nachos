@@ -18,6 +18,7 @@
 #ifndef TLB_H
 #define TLB_H
 
+#include "machine.h"
 #include "copyright.h"
 #include "utility.h"
 
@@ -40,6 +41,16 @@ class TranslationEntry {
 			// page is referenced or modified.
     bool dirty;         // This bit is set by the hardware every time the
 			// page is modified.
+	
+	//add in lab5
+	int lastUseTick; //the last tick tlb used 
 };
 
+/*
+class phsMemoryManger{
+	int useArr[NumPhysPages];
+	AddrSpace* spaceArr[NumPhysPages];
+	int vpnArr[NumPhysPages];
+};
+*/
 #endif

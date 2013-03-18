@@ -16,8 +16,16 @@
 #include "stats.h"
 #include "timer.h"
 
+//lab1
+const int MAX_ID_NUM = 128;
+extern bool idManager[];
+
 //lab4
 #include "ipc.h"
+extern Ipc ipcManager; 
+
+//add in lab5
+#define USE_TLB 
 
 // Initialization and cleanup routines
 extern void Initialize(int argc, char **argv); 	// Initialization,
@@ -32,16 +40,13 @@ extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
 
-//lab1
-const int MAX_ID_NUM = 128;
-extern bool idManager[];
-
-//lab4
-extern Ipc ipcManager; 
 
 #ifdef USER_PROGRAM
-#include "machine.h"
-extern Machine* machine;	// user program memory and registers
+#include "machine.h"  //lab 5
+#include "bitmap.h"
+extern Machine *machine;	// user program memory and registers
+extern BitMap *memoryBitMap; // bitmap to record the memory used of machine->mainMemory
+extern PhysMemoryManager *physMemoryManager;
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

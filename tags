@@ -16,7 +16,7 @@ $0	test/start.c	/^	addiu $2,$0,SC_Read$/;"	v
 $0	test/start.c	/^	addiu $2,$0,SC_Write$/;"	v
 $0	test/start.c	/^	addiu $2,$0,SC_Yield$/;"	v
 A	test/matmult.c	/^int A[Dim][Dim];$/;"	v
-A	test/sort.c	/^int A[1024];	\/* size of physical memory; with code, we'll run out of space!*\/$/;"	v
+A	test/sort.c	/^short A[1024];	\/* size of physical memory; with code, we'll run out of space!*\/$/;"	v
 ADDRSPACE_H	userprog/addrspace.h	14;"	d
 AOUTHDR	bin/coff.h	/^      } AOUTHDR;$/;"	t	typeref:struct:aouthdr
 AOUTHSZ	bin/coff.h	34;"	d
@@ -352,6 +352,7 @@ MAIN	threads/main.cc	49;"	d	file:
 MAIN	threads/main.cc	51;"	d	file:
 MAKE	Makefile	/^MAKE = make$/;"	m
 MAXDATA	bin/out.c	34;"	d	file:
+MAXN	test/init.c	/^const int MAXN = 10;$/;"	v
 MAXRELOCS	bin/out.c	31;"	d	file:
 MAXSCNS	bin/out.c	43;"	d	file:
 MAXSSPACE	bin/out.c	45;"	d	file:
@@ -819,6 +820,7 @@ __va_copy	threads/stdarg.h	114;"	d
 __va_rounded_size	threads/stdarg.h	82;"	d
 __va_rounded_size	threads/stdarg.h	85;"	d
 _eax_save	threads/switch.c	/^        movl    _eax_save,%ebx          # get the saved value of eax$/;"	v
+a	test/init.c	/^int a[10];$/;"	v
 a0	threads/switch.c	/^	move	a0, InitialArg$/;"	v
 a0	threads/switch.c	46;"	d	file:
 a0	threads/switch.s	/^#define a0      $4      \/* argument registers *\/$/;"	d
@@ -1016,6 +1018,7 @@ main	bin/disasm.c	/^main(argc, argv)$/;"	f
 main	bin/main.c	/^main(argc, argv)$/;"	f
 main	bin/out.c	/^main(argc,argv)$/;"	f
 main	test/halt.c	/^main()$/;"	f
+main	test/init.c	/^int main() {$/;"	f
 main	test/matmult.c	/^main()$/;"	f
 main	test/shell.c	/^main()$/;"	f
 main	test/sort.c	/^main()$/;"	f
@@ -1026,6 +1029,7 @@ max	threads/utility.h	36;"	d
 mem	bin/disasm.c	/^char mem[MEMSIZE];		\/* main memory. use malloc later *\/$/;"	v
 mem	bin/main.c	/^char mem[MEMSIZE];		\/* main memory. use malloc later *\/$/;"	v
 memoffset	bin/int.h	12;"	d
+memoryBitMap	threads/system.cc	/^BitMap *memoryBitMap;$/;"	v
 messageAvailable	network/post.h	/^    Semaphore *messageAvailable;\/\/ V'ed when message has arrived from network$/;"	m	class:PostOffice
 messageSent	network/post.h	/^    Semaphore *messageSent;	\/\/ V'ed when next message can be sent to network$/;"	m	class:PostOffice
 messages	network/post.h	/^    SynchList *messages;	\/\/ A mailbox is just a list of arrived messages$/;"	m	class:MailBox

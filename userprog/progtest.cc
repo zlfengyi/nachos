@@ -14,6 +14,19 @@
 #include "addrspace.h"
 #include "synch.h"
 
+
+void forkThread(int which) {
+	printf("now forkThread begins\n");
+	
+	OpenFile *file2 = fileSystem->Open("init");
+	AddrSpace *space2 = new AddrSpace(file2);
+	currentThread->space = space2;
+	space2->InitRegisters();
+	space2->RestoreState();
+	delete file2;
+
+	machine->Run();
+}
 //----------------------------------------------------------------------
 // StartProcess
 // 	Run a user program.  Open the executable, load it into
@@ -38,8 +51,14 @@ StartProcess(char *filename)
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
 
+	//*---------for lab5 test--------------*/
+	Thread *thread2 = new Thread("thread2");
+	thread2->Fork(forkThread, 2);
+	
+	//*--------------end--------------------*/
     machine->Run();			// jump to the user progam
-    ASSERT(FALSE);			// machine->Run never returns;
+   	printf("end\n");
+	ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits
 					// by doing the syscall "exit"
 }
