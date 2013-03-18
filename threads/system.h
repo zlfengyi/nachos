@@ -44,6 +44,7 @@ extern Timer *timer;				// the hardware alarm clock
 #ifdef USER_PROGRAM
 #include "machine.h"  //lab 5
 #include "bitmap.h"
+#define USE_TLB
 extern Machine *machine;	// user program memory and registers
 extern BitMap *memoryBitMap; // bitmap to record the memory used of machine->mainMemory
 extern PhysMemoryManager *physMemoryManager;

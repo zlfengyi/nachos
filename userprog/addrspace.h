@@ -37,7 +37,7 @@ class AddrSpace {
 					// for now!
     unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-	int *virDisk;	//virtual disk, add in lab5
+	char *virDisk;	//virtual disk, add in lab5
 };
 
 #endif // ADDRSPACE_H

@@ -64,6 +64,7 @@ Machine::Machine(bool debug)
     for (i = 0; i < MemorySize; i++)
       	mainMemory[i] = 0;
 #ifdef USE_TLB
+	DEBUG('a', "USE_TLB is open\n");
 	clockPos = 0;
 	tlb = new TranslationEntry[TLBSize];
     for (i = 0; i < TLBSize; i++)
@@ -240,7 +241,59 @@ bool Machine::tlbMiss_FIFO2(int vpn) {
 	return true;
 }
 
+//get translationEntry from pageTable, 
+//if the page data is not in physmemory, load from disk
+TranslationEntry* getTranslationEntry(int vpn) {
+	if (currentThread->space->pageTable[vpn].valid) 
+		return &currentThread->space->pageTable[vpn];
+	
+	AddrSpace *currentSpace = currentThread->space;
+
+	int i, k;
+	double mx = 1e30;
+	for (int i = 0; i < NumPhysPages; i++) {
+		if (physMemoryManager->useArr[i] == false) {
+			physMemoryManager->useArr[i] = true;
+			physMemoryManager->lastUseTick[i] = stats->totalTicks;
+			physMemoryManager->spaceArr[i] = currentSpace;
+			physMemoryManager->vpnArr[i] = vpn;
+			
+			currentSpace->pageTable[vpn].physicalPage = i;
+			currentSpace->pageTable[vpn].valid = true;
+			
+			memcpy(machine->mainMemory + i*PageSize, currentSpace->virDisk + vpn*PageSize, PageSize);
+			return &currentSpace->pageTable[vpn];
+		} else {
+			if (physMemoryManager->lastUseTick[i] < mx) {
+				mx = physMemoryManager->lastUseTick[i];
+				k = i;
+			}
+		}
+	}
+	AddrSpace *anSpace = physMemoryManager->spaceArr[k];
+	int anVpn = physMemoryManager->vpnArr[k];
+
+	//set anSpace->anVpn entry to unvalid
+	//copy data to disk
+	memcpy(anSpace->virDisk + anVpn*PageSize, machine->mainMemory + k*PageSize, PageSize);
+	anSpace->pageTable[anVpn].valid = false;
+	
+	//copy data from currentSpace->disk to memory
+	memcpy(machine->mainMemory + k*PageSize, currentSpace->virDisk + vpn*PageSize, PageSize);
+	currentSpace->pageTable[vpn].physicalPage = k;
+	currentSpace->pageTable[vpn].valid = true;
+	//set values in physMemory
+	physMemoryManager->useArr[k] = true;
+	physMemoryManager->lastUseTick[k] = stats->totalTicks;
+	physMemoryManager->spaceArr[k] = currentSpace;
+	physMemoryManager->vpnArr[k] = vpn;
+	
+	return &currentSpace->pageTable[vpn];
+}
 bool Machine::tlbMiss_LRU(int vpn) {
+printf("tlbMiss\n");
+	TranslationEntry *entry = getTranslationEntry(vpn);
+
 	for (int i = 0; i < TLBSize; i++) {
 		if (tlb[i].valid == false) {	
 			memcpy(&tlb[i], &currentThread->space->pageTable[vpn], sizeof(TranslationEntry)); 

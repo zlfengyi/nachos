@@ -79,6 +79,7 @@ public:
 	bool useArr[NumPhysPages];
 	AddrSpace* spaceArr[NumPhysPages];
 	int vpnArr[NumPhysPages];
+	int lastUseTick[NumPhysPages];
 	PhysMemoryManager() {
 		int i;
 		for (i = 0; i < NumPhysPages; i++) useArr[i] = false;

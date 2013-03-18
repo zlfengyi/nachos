@@ -43,9 +43,11 @@ StartProcess(char *filename)
 	printf("Unable to open file %s\n", filename);
 	return;
     }
-    space = new AddrSpace(executable);    
-    currentThread->space = space;
 
+	machine->tlb[0].valid = false;
+	space = new AddrSpace(executable);    
+    currentThread->space = space;
+	machine->tlb[0].valid = false;
     delete executable;			// close file
 
     space->InitRegisters();		// set the initial register values
