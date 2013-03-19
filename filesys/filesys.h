@@ -37,6 +37,23 @@
 
 #include "copyright.h"
 #include "openfile.h"
+#include "directory.h"
+
+//---------------------------add in lab 6------------------------------//
+
+#define MAX_DIR_DEEP 20
+/*
+class FileStatus
+{
+  int numOpen;        // 0 means the slot is not in use
+  int sector;         // the header file sector for index
+  Lock *lock;
+  FileStatus() {
+    numOpen = 0;
+    lock = new Lock("single file lock");
+  }
+};
+*/
 
 #ifdef FILESYS_STUB 		// Temporarily implement file system calls as 
 				// calls to UNIX, until the real file system
@@ -85,11 +102,21 @@ class FileSystem {
 
     void Print();			// List all the files and their contents
 
+    bool addFileSize(OpenFile *file, int size);  // return false if there's no extra space for size
+
+    bool makeDir(char *name);
+  
+    bool cdDir(char *name);
+    
+    int dirStackSectors[MAX_DIR_DEEP];
+    int dirStackTop;
   private:
    OpenFile* freeMapFile;		// Bit map of free disk blocks,
 					// represented as a file
    OpenFile* directoryFile;		// "Root" directory -- list of 
 					// file names, represented as a file
+
+   
 };
 
 #endif // FILESYS

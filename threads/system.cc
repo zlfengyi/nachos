@@ -31,6 +31,7 @@ FileSystem  *fileSystem;
 
 #ifdef FILESYS
 SynchDisk   *synchDisk;
+SynchFiles  *synchFiles = new SynchFiles;         //add in lab 6
 #endif
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB

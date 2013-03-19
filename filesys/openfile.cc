@@ -29,9 +29,15 @@
 
 OpenFile::OpenFile(int sector)
 { 
+    headSector = sector;
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
     seekPosition = 0;
+
+    hdr->lastOpenTime = clock();
+    this->updateHeader();                   // update hdr, using hdr->writeBack(headSector)
+
+    synchFiles->OpenFile(this->headSector);
 }
 
 //----------------------------------------------------------------------
@@ -41,6 +47,7 @@ OpenFile::OpenFile(int sector)
 
 OpenFile::~OpenFile()
 {
+    synchFiles->CloseFile(this->headSector);
     delete hdr;
 }
 
@@ -116,9 +123,14 @@ OpenFile::Write(char *into, int numBytes)
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
+    Lock *lock = synchFiles->GetLock(this->headSector);
+    lock->Acquire();
+
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
+
+   // printf("%d\n", fileLength);
 
     if ((numBytes <= 0) || (position >= fileLength))
     	return 0; 				// check request
@@ -140,12 +152,51 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     // copy the part we want
     bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
     delete [] buf;
+
+    lock->Release();
+    return numBytes;
+}
+
+int
+OpenFile::WritingRead(char *into, int numBytes, int position)
+{
+    int fileLength = hdr->FileLength();
+    int i, firstSector, lastSector, numSectors;
+    char *buf;
+
+   // printf("%d\n", fileLength);
+
+    if ((numBytes <= 0) || (position >= fileLength))
+        return 0;               // check request
+    if ((position + numBytes) > fileLength)     
+    numBytes = fileLength - position;
+    DEBUG('f', "Reading %d bytes at %d, from file of length %d.\n",     
+            numBytes, position, fileLength);
+
+    firstSector = divRoundDown(position, SectorSize);
+    lastSector = divRoundDown(position + numBytes - 1, SectorSize);
+    numSectors = 1 + lastSector - firstSector;
+
+    // read in all the full and partial sectors that we need
+    buf = new char[numSectors * SectorSize];
+    for (i = firstSector; i <= lastSector; i++) 
+        synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
+                    &buf[(i - firstSector) * SectorSize]);
+
+    // copy the part we want
+    bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
+    delete [] buf;
+
     return numBytes;
 }
 
 int
 OpenFile::WriteAt(char *from, int numBytes, int position)
 {
+    Lock *lock = synchFiles->GetLock(this->headSector);
+    lock->Acquire();
+
+
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     bool firstAligned, lastAligned;
@@ -169,9 +220,9 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 
 // read in first and last sector, if they are to be partially modified
     if (!firstAligned)
-        ReadAt(buf, SectorSize, firstSector * SectorSize);	
+        WritingRead(buf, SectorSize, firstSector * SectorSize);	
     if (!lastAligned && ((firstSector != lastSector) || firstAligned))
-        ReadAt(&buf[(lastSector - firstSector) * SectorSize], 
+        WritingRead(&buf[(lastSector - firstSector) * SectorSize], 
 				SectorSize, lastSector * SectorSize);	
 
 // copy in the bytes we want to change 
@@ -182,6 +233,13 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
     delete [] buf;
+
+    this->hdr->lastModifyTime = clock();
+    this->updateHeader();
+
+   DEBUG('f', "finish writeing \n");
+    
+    lock->Release();
     return numBytes;
 }
 
@@ -194,4 +252,26 @@ int
 OpenFile::Length() 
 { 
     return hdr->FileLength(); 
+}
+
+/*
+int 
+OpenFile::addWrite(char *into, int numBytes) 
+{
+    BitMap *freeMap = new BitMap(NumSectors);
+    freeMap->FetchFrom(freeMapFile);
+    
+    if (this->hdr->addFileSize(freeMap, numBytes) == false) return 0;
+
+    int result = WriteAt(into, numBytes, seekPosition);
+    seekPosition += result;
+    return result;
+}
+
+*/
+
+void 
+OpenFile::updateHeader() 
+{
+    this->hdr->WriteBack(this->headSector);
 }

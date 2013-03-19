@@ -107,3 +107,70 @@ SynchDisk::RequestDone()
 { 
     semaphore->V();
 }
+
+
+
+SynchFiles::SynchFiles() {
+    table = new FileStatus[NumFileStatus];
+}
+
+bool
+SynchFiles::OpenFile(int sector) {
+    int i;
+    // find if the file is already opened
+    for (i = 0; i < NumFileStatus; i++) {
+        if (table[i].numOpened > 0 && table[i].fileSector == sector) {
+            table[i].numOpened++;
+
+            return true;
+        }
+    }
+
+    //find unuse slot
+    for (i = 0; i < NumFileStatus; i++) {
+        if (table[i].numOpened == 0) {
+            table[i].numOpened = 1;
+            table[i].fileSector = sector;
+            return true;
+        }
+    }
+
+    //open failed
+    return false;
+}
+
+bool 
+SynchFiles::CloseFile(int sector) {
+    int i;
+    for (i = 0; i < NumFileStatus; i++) {
+        if (table[i].numOpened > 0 && table[i].fileSector == sector) {
+            table[i].numOpened--;
+            return true;
+
+        }
+    }
+
+    return false;
+}
+
+int
+SynchFiles::GetOpenNum(int sector) {
+    int i;
+    for (i = 0; i < NumFileStatus; i++) {
+        if (table[i].numOpened > 0 && table[i].fileSector == sector) {
+            return table[i].numOpened;
+        }
+    }
+    return 0;
+}
+
+Lock*
+SynchFiles::GetLock(int sector) {
+    int i;
+    for (i = 0; i < NumFileStatus; i++) {
+        if (table[i].numOpened > 0 && table[i].fileSector == sector) {
+            return table[i].lock;
+        }   
+    }
+    return NULL;
+}

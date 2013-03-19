@@ -41,13 +41,30 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize)
 { 
+    
+    fileType = 'f';
+    createTime = clock();
+    lastModifyTime = clock();
+    lastOpenTime = clock();
+
+
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
-    if (freeMap->NumClear() < numSectors)
+    if (freeMap->NumClear() < (numSectors + NumDirect-1)/(NumDirect)*(NumDirect+1) )
 	return FALSE;		// not enough space
+    
+    this->firstIndexSector = freeMap->Find();
 
-    for (int i = 0; i < numSectors; i++)
-	dataSectors[i] = freeMap->Find();
+    int buf[NumDirect+1];
+    int indexSector = this->firstIndexSector;
+    for (int i = 0; i < numSectors; i++) {
+	   buf[i%NumDirect] = freeMap->Find();
+       if (i%NumDirect == NumDirect-1 || i == numSectors-1) {
+            if (i != numSectors-1) buf[NumDirect] = freeMap->Find();
+            synchDisk->WriteSector(indexSector, (char *)buf);
+            indexSector = buf[NumDirect];
+       }
+    }
     return TRUE;
 }
 
@@ -61,9 +78,20 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
+    int indexSector = this->firstIndexSector;
+    int buf[NumDirect+1];
+    synchDisk->ReadSector(indexSector, (char *)buf);
+    freeMap->Clear(indexSector);
+
     for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
+    	int sector = buf[i%NumDirect];
+        freeMap->Clear(sector);
+
+        if (i%NumDirect == NumDirect-1 && i != numSectors-1) {
+            indexSector = buf[NumDirect];
+            synchDisk->ReadSector(indexSector, (char *)buf);
+            freeMap->Clear(indexSector);
+        } 
     }
 }
 
@@ -106,7 +134,17 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    return(dataSectors[offset / SectorSize]);
+    int indexSector = this->firstIndexSector;
+    int sector = offset/SectorSize;
+    int buf[NumDirect+1];
+    while (1>0) {
+        synchDisk->ReadSector(indexSector, (char *)buf);
+        if (sector < NumDirect) {
+            return buf[sector];
+        }
+        sector -= NumDirect;
+        indexSector = buf[NumDirect];
+    }
 }
 
 //----------------------------------------------------------------------
@@ -129,10 +167,12 @@ FileHeader::FileLength()
 void
 FileHeader::Print()
 {
+    /*
     int i, j, k;
     char *data = new char[SectorSize];
 
     printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
+  
     for (i = 0; i < numSectors; i++)
 	printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");
@@ -147,4 +187,49 @@ FileHeader::Print()
         printf("\n"); 
     }
     delete [] data;
+*/
+}
+
+//return false if there's no extra sectors for addSize
+bool 
+FileHeader::addFileSize(BitMap *freeMap, int addSize) {
+    int addSectors = divRoundUp(this->numBytes+addSize, SectorSize) - this->numSectors;
+    if (addSectors == 0) {
+        this->numBytes += addSize;
+        return true;
+    }
+
+
+    if (freeMap->NumClear() < (addSectors + NumDirect-1)/(NumDirect)*(NumDirect+1) ) 
+        return false;
+
+    int indexSector = this->firstIndexSector;
+    int sector = this->numSectors;
+    int buf[NumDirect+1];
+    
+    while (sector >= NumDirect) {
+        synchDisk->ReadSector(indexSector, (char *)buf);
+        sector -= NumDirect;
+        indexSector = buf[NumDirect];
+    } 
+
+    synchDisk->ReadSector(indexSector, (char *)buf);
+    for (int i = 0; i < addSectors; i++) {
+        //sector must be less than NumDirect, so there's space for buf
+        buf[(sector+i)%NumDirect] = freeMap->Find();
+        
+        if (i == addSectors-1) {
+            synchDisk->WriteSector(indexSector, (char *)buf);
+        }
+        
+        if (i != addSectors-1 && (sector+i)%NumDirect == NumDirect-1) {
+            buf[NumDirect] = freeMap->Find();
+            synchDisk->WriteSector(indexSector, (char *)buf);
+            indexSector = buf[NumDirect];        
+        }
+    }
+
+
+    this->numBytes += addSize;
+    this->numSectors = divRoundUp(this->numBytes+addSize, SectorSize) - this->numSectors;
 }

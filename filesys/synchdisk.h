@@ -50,4 +50,34 @@ class SynchDisk {
 					// can be sent to the disk at a time
 };
 
+//----------------------------add in lab 6------------------------//
+#define NumFileStatus 100
+
+class FileStatus
+{
+public:
+    int numOpened;          //0 means no used
+    int fileSector;             //the secotr of open file's header,which is using for index
+    Lock *lock;
+    FileStatus() {
+        numOpened = 0;      //not used
+        lock = new Lock("single file lock");
+    }
+};
+
+class SynchFiles
+{
+public:
+    FileStatus *table;
+  
+    bool OpenFile(int sector);           //  open file in "sector"  
+    bool CloseFile(int sector);          //  close file in "sector"
+    int GetOpenNum(int sector);         //  get the file open num
+    Lock *GetLock(int sector);          //  get the file lock in "sector"
+    SynchFiles();                    //  constructor
+};
+
+//----------------------------finish add-------------------------//
+
+
 #endif // SYNCHDISK_H

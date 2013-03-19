@@ -81,7 +81,7 @@ extern void MailTest(int networkID);
 int
 main(int argc, char **argv)
 {
-    int argCount;			// the number of arguments 
+	int argCount;			// the number of arguments 
 					// for a particular command
 
     DEBUG('t', "Entering main");
@@ -100,7 +100,6 @@ main(int argc, char **argv)
         break;
       }
     }
-
     ThreadTest();
 #endif
 

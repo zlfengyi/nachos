@@ -40,7 +40,7 @@ Directory::Directory(int size)
     table = new DirectoryEntry[size];
     tableSize = size;
     for (int i = 0; i < tableSize; i++)
-	table[i].inUse = FALSE;
+    table[i].inUse = FALSE;
 }
 
 //----------------------------------------------------------------------
@@ -115,6 +115,16 @@ Directory::Find(char *name)
     return -1;
 }
 
+int
+Directory::FindDirectory(char *name)
+{
+    int i = FindIndex(name);
+
+    if (i != -1 && table[i].entryType == 'd')
+    return table[i].sector;
+    return -1;
+}
+
 //----------------------------------------------------------------------
 // Directory::Add
 // 	Add a file into the directory.  Return TRUE if successful;
@@ -127,7 +137,7 @@ Directory::Find(char *name)
 //----------------------------------------------------------------------
 
 bool
-Directory::Add(char *name, int newSector)
+Directory::Add(char *name, int newSector, char type)
 { 
     if (FindIndex(name) != -1)
 	return FALSE;
@@ -137,6 +147,7 @@ Directory::Add(char *name, int newSector)
             table[i].inUse = TRUE;
             strncpy(table[i].name, name, FileNameMaxLen); 
             table[i].sector = newSector;
+            table[i].entryType = type;
         return TRUE;
 	}
     return FALSE;	// no space.  Fix when we have extensible files.
@@ -188,7 +199,7 @@ Directory::Print()
     printf("Directory contents:\n");
     for (int i = 0; i < tableSize; i++)
 	if (table[i].inUse) {
-	    printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
+	    printf("Name: %s, Sector: %d, type: %c\n", table[i].name, table[i].sector, table[i].entryType);
 	    hdr->FetchFrom(table[i].sector);
 	    hdr->Print();
 	}

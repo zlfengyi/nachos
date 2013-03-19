@@ -35,6 +35,12 @@
 // by allocating blocks for the file (if it is a new file), or by
 // reading it from disk.
 
+/*
+class FileSectorIndex{
+	int dataSectors[NumDirect];
+    int nextIndexSector;
+};
+*/
 class FileHeader {
   public:
     bool Allocate(BitMap *bitMap, int fileSize);// Initialize a file header, 
@@ -51,16 +57,27 @@ class FileHeader {
 					// to the disk sector containing
 					// the byte
 
-    int FileLength();			// Return the length of the file 
-					// in bytes
+    int FileLength();		// Return the length of the file 
+	           				// in bytes
 
     void Print();			// Print the contents of the file.
 
-  private:
+    bool addFileSize(BitMap *freeMap, int addSize);
+
+
+
+
+//-----------------------members-------------------------------//
     int numBytes;			// Number of bytes in the file
     int numSectors;			// Number of data sectors in the file
-    int dataSectors[NumDirect];		// Disk sector numbers for each data 
-					// block in the file
+    int firstIndexSector;   // the first index sector 
+   
+   
+    char fileType;          // the fileType
+    long long createTime, lastModifyTime, lastOpenTime;
+
+    char forAligin[SectorSize-(3*4 + 3*8 + 1)];       //useless, just for aligin
+    
 };
 
 #endif // FILEHDR_H

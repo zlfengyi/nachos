@@ -108,10 +108,13 @@ Print(char *name)
 //	  PerformanceTest -- overall control, and print out performance #'s
 //----------------------------------------------------------------------
 
-#define FileName 	"TestFile"
+#define FileName 	"small12345.txt"
 #define Contents 	"1234567890"
 #define ContentSize 	strlen(Contents)
 #define FileSize 	((int)(ContentSize * 5000))
+
+#define ExtraContents "0987654321"
+#define ExtraSize ContentSize*10
 
 static void 
 FileWrite()
@@ -121,7 +124,7 @@ FileWrite()
 
     printf("Sequential write of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
-    if (!fileSystem->Create(FileName, 0)) {
+    if (!fileSystem->Create(FileName, FileSize)) {
       printf("Perf test: can't create %s\n", FileName);
       return;
     }
@@ -138,6 +141,14 @@ FileWrite()
 	    return;
 	}
     }
+
+    fileSystem->addFileSize(openFile, ExtraSize);
+    
+    printf("%d\n", openFile->Length());
+    for (i = 0; i < ExtraSize; i+= ContentSize) {
+        openFile->Write(ExtraContents, ContentSize);
+    }
+
     delete openFile;	// close file
 }
 
@@ -156,30 +167,74 @@ FileRead()
 	delete [] buffer;
 	return;
     }
-    for (i = 0; i < FileSize; i += ContentSize) {
+    for (i = 0; i < FileSize+ExtraSize; i += ContentSize) {
         numBytes = openFile->Read(buffer, ContentSize);
-	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
-	    printf("Perf test: unable to read %s\n", FileName);
-	    delete openFile;
-	    delete [] buffer;
-	    return;
-	}
+        printf("%d  %d %s\n", openFile->seekPosition, openFile->Length(), buffer);
+
+/*
+    	if ((numBytes < 10) || strncmp(buffer, Contents, ContentSize)) {
+    	    printf("Perf test: unable to read %s\n", FileName);
+    	    delete openFile;
+    	    delete [] buffer;
+    	    return;
+    	}
+        */
     }
     delete [] buffer;
     delete openFile;	// close file
 }
 
+
+void mkdir() {
+    fileSystem->makeDir("inpku");
+    fileSystem->cdDir("inpku");
+    fileSystem->Print();
+    fileSystem->cdDir("..");
+    fileSystem->Create("abc", 220);
+    fileSystem->Print();
+}
+
+
+
+void open_file(int which) {
+    OpenFile *file = fileSystem->Open(FileName);
+    
+    currentThread->Yield();
+    
+    delete file;
+}
+void testMultiOpen() {
+    Thread *thread1 = new Thread("test1");
+    thread1->Fork(open_file, 1);
+    
+    currentThread->Yield();
+    OpenFile *file = fileSystem->Open(FileName);
+    fileSystem->Remove(FileName);
+
+    currentThread->Yield();
+    fileSystem->Remove(FileName);    
+}
+
 void
 PerformanceTest()
 {
-    printf("Starting file system performance test:\n");
+
+	printf("Starting file system performance test:\n");
     stats->Print();
     FileWrite();
-    FileRead();
+    testMultiOpen();
+
+/*   FileRead();
     if (!fileSystem->Remove(FileName)) {
       printf("Perf test: unable to remove %s\n", FileName);
       return;
     }
-    stats->Print();
-}
+	stats->Print();
+*/
 
+    //test multiple deep directory, including mkdir and cd function
+    //mkdir();
+
+    //test more multiple threads open file and remove
+    
+}
