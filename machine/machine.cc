@@ -291,6 +291,10 @@ TranslationEntry* getTranslationEntry(int vpn) {
 	return &currentSpace->pageTable[vpn];
 }
 bool Machine::tlbMiss_LRU(int vpn) {
+<<<<<<< HEAD
+=======
+printf("tlbMiss\n");
+>>>>>>> e1161f913130ed97fdc5d8bf7b9d50d8f26f1799
 	TranslationEntry *entry = getTranslationEntry(vpn);
 
 	for (int i = 0; i < TLBSize; i++) {

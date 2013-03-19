@@ -90,8 +90,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 		pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+<<<<<<< HEAD
 		pageTable[i].physicalPage = memoryBitMap->Find();
 		printf("the virtural page is %d, and find physical page is %d with BitMap\n", i, pageTable[i].physicalPage);
+=======
+		pageTable[i].physicalPage = 0;
+		//memoryBitMap->Find();
+	//	printf("the virtural page is %d, and find physical page is %d with BitMap\n", i, pageTable[i].physicalPage);
+>>>>>>> e1161f913130ed97fdc5d8bf7b9d50d8f26f1799
 
 		pageTable[i].valid = false;
 		pageTable[i].use = false;
